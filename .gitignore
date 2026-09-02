@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# Library/CLI module: do not commit uv.lock (applications do).
+uv.lock
+
+# Env / secrets
+.env
+.env.*
+*.pem
+
+# Editors
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary Grok Build status reports — never commit.
+.xgic/
