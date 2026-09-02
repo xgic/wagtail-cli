@@ -20,8 +20,8 @@ Default CMS: [ADR-0006](https://github.com/xgic/ai/blob/main/docs/adr/0006-adopt
 
 Wagtail is the default CMS for new XGIC work. This module owns the **Wagtail product**
 namespace under `xgic` so humans and agents share one command map. The thin site
-template lives in [xgic/wagtail](https://github.com/xgic/wagtail); official image pins
-and contributor Compose live in [xgic/wagtail-dev](https://github.com/xgic/wagtail-dev).
+template lives in [xgic/wagtail](https://github.com/xgic/wagtail); the Dev Container
+**producer** (`ghcr.io/xgic/wagtail-dev`) lives in [xgic/wagtail-dev](https://github.com/xgic/wagtail-dev).
 
 ---
 
