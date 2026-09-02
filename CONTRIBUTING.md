@@ -20,12 +20,22 @@ Thank you for contributing.
 
 ## Development
 
+This repository is a **pure Python CLI module**. Prefer **`uv`** for local
+development ([BASE-STANDARDS](https://github.com/xgic/ai/blob/main/docs/BASE-STANDARDS-FOR-ORCHESTRATED-REPOS.md)
+dual-mode Python environments). Open **this repository folder** as the VS Code
+workspace so a parent multi-folder workspace does not auto-activate the wrong
+`.venv`.
+
 ```bash
-python -m pip install -e ../cli
-python -m pip install -e ".[dev]"
-pytest
-ruff check src tests
+uv pip install -e ../cli
+uv pip install -e ".[dev]"
+uv run pytest
+uv run ruff check src tests
 ```
+
+PyPI publish uses `uv` for build and clean-env smoke
+([python-package-release.md](https://github.com/xgic/ai/blob/main/docs/python-package-release.md)).
+Do not use `uv publish` for official releases.
 
 ## Public safety
 
