@@ -11,3 +11,6 @@ and this project uses [Semantic Versioning](https://semver.org/).
 
 - Bootstrap `xgic.cli.wagtail` (`xgic wagtail` / `xgic wagtail info`).
   Missing ACTION prints full usage.
+- `xgic wagtail setup` (idempotent PostgreSQL site ensure) and
+  `xgic wagtail schema` (create-wagtail-config JSON Schema). SQLite is
+  not an XGIC default.
