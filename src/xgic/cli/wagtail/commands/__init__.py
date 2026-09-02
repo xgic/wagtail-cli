@@ -1,0 +1,1 @@
+"""Wagtail CLI command handlers."""
