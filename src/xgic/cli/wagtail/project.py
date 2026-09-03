@@ -86,11 +86,27 @@ def patch_databases(text: str) -> tuple[str, bool]:
     return updated, updated != text
 
 
+def ensure_postgres_installed_apps(text: str) -> tuple[str, bool]:
+    """Ensure ``django.contrib.postgres`` is in INSTALLED_APPS (Wagtail search)."""
+    if "django.contrib.postgres" in text:
+        return text, False
+    needle = '"django.contrib.admin"'
+    if needle not in text:
+        return text, False
+    updated = text.replace(
+        needle,
+        '"django.contrib.postgres",\n    "django.contrib.admin"',
+        1,
+    )
+    return updated, updated != text
+
+
 def patch_settings_base(settings_base: Path) -> bool:
     """Patch ``settings/base.py`` in place. Return True if the file changed."""
     original = settings_base.read_text(encoding="utf-8")
-    updated, changed = patch_databases(original)
-    if not changed:
+    updated, db_changed = patch_databases(original)
+    updated, apps_changed = ensure_postgres_installed_apps(updated)
+    if not db_changed and not apps_changed:
         return False
     settings_base.write_text(updated, encoding="utf-8")
     return True

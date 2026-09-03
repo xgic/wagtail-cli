@@ -7,6 +7,7 @@ from pathlib import Path
 from xgic.cli.wagtail.config import get_db_adapter, load_create_wagtail_config
 from xgic.cli.wagtail.env_helpers import generate_env_content
 from xgic.cli.wagtail.project import (
+    ensure_postgres_installed_apps,
     ensure_wagtail_project,
     is_wagtail_project_complete,
     patch_databases,
@@ -46,6 +47,16 @@ def test_patch_databases_replaces_sqlite() -> None:
     assert "sqlite3" not in updated
     assert "import os" in updated
     assert "POSTGRES_HOST" in updated
+
+
+def test_ensure_postgres_installed_apps() -> None:
+    src = 'INSTALLED_APPS = [\n    "django.contrib.admin",\n]\n'
+    updated, changed = ensure_postgres_installed_apps(src)
+    assert changed
+    assert '"django.contrib.postgres"' in updated
+    again, changed_again = ensure_postgres_installed_apps(updated)
+    assert changed_again is False
+    assert again == updated
 
 
 def test_patch_databases_idempotent() -> None:
