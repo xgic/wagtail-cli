@@ -16,9 +16,8 @@ def run_info(args: argparse.Namespace) -> int:
         "package": "xgic-wagtail-cli",
         "version": __version__,
         "status": "experimental",
-        "commands": ["info"],
+        "commands": ["info", "setup", "schema"],
         "planned": [
-            "project ensure/create",
             "dev server helpers",
         ],
         "repository": "https://github.com/xgic/wagtail-cli",
@@ -32,6 +31,6 @@ def run_info(args: argparse.Namespace) -> int:
     print_success(f"XGIC Wagtail CLI {__version__} (experimental)")
     print_info("Namespace: xgic.cli.wagtail")
     print_info("Repo: https://github.com/xgic/wagtail-cli")
-    print_info("Commands: info")
+    print_info("Commands: info, setup, schema")
     print_info("Template: https://github.com/xgic/wagtail")
     return 0

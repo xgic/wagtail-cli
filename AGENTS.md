@@ -14,13 +14,17 @@ Public repository. Follow https://github.com/xgic/ai for multi-repo standards.
 - Nested `xgic wagtail …` product commands via entry points (`xgic.cli.commands`)
 - Missing ACTION prints full usage (exit 2)
 - `info` reports experimental module identity
+- `setup` ensures a Wagtail site on **PostgreSQL** (Compose `postgres` service); not SQLite
+- `schema` writes JSON Schema for `.devcontainer/create-wagtail-config.json`
 
 ## Out of scope
 
 - Private host defaults or internal inventory
 - Thin CLI framework / env detection → https://github.com/xgic/cli
 - Dev Container / Docker Compose lifecycle → https://github.com/xgic/dev-cli
-- Site schema / empty-site Compose → https://github.com/xgic/wagtail and https://github.com/xgic/wagtail-dev
+- StreamField / site content models → https://github.com/xgic/wagtail (empty-site gate)
+- Site Compose / template files → https://github.com/xgic/wagtail
+- Image producer → https://github.com/xgic/wagtail-dev
 - Payload CMS commands → https://github.com/xgic/payload-cms-cli
 
 ## Rules

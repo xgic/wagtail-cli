@@ -61,9 +61,11 @@ uv pip install -e ../cli
 uv pip install -e ".[dev]"
 xgic wagtail
 xgic wagtail info
+xgic wagtail setup
 ```
 
 `xgic wagtail` with no action prints full usage and exits `2`.
+`xgic wagtail setup` is idempotent: config JSON, Compose `.env`, `wagtail start` when missing, Django `DATABASES` on **PostgreSQL**. SQLite is not an XGIC default.
 
 ### Install (PyPI)
 
@@ -84,9 +86,11 @@ uv pip install "git+https://github.com/xgic/wagtail-cli.git@main"
 |---------|---------|
 | `xgic wagtail` | Full usage (missing ACTION) |
 | `xgic wagtail info` | Module identity (`--json` for machine output) |
+| `xgic wagtail setup [--quiet]` | First-run: config JSON, `.devcontainer/.env`, `wagtail start` if needed, PostgreSQL settings |
+| `xgic wagtail schema [--output PATH]` | Write JSON Schema for `create-wagtail-config.json` (IntelliSense) |
 | `xgic wagtail --help` | Same usage listing |
 
-Project ensure/create and dev-server helpers are planned; they are not in 0.1.0.
+`dbAdapter` is **postgres** only. Dev-server helpers remain planned.
 
 ---
 

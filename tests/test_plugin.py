@@ -32,6 +32,8 @@ def test_missing_action_prints_full_usage(capsys) -> None:
     out = capsys.readouterr().out
     assert "usage:" in out.lower()
     assert "info" in out
+    assert "setup" in out
+    assert "schema" in out
     assert "the following arguments are required" not in out.lower()
 
 
@@ -43,6 +45,8 @@ def test_run_info_json(capsys) -> None:
     assert data["package"] == "xgic-wagtail-cli"
     assert data["status"] == "experimental"
     assert "info" in data["commands"]
+    assert "setup" in data["commands"]
+    assert "schema" in data["commands"]
 
 
 def test_run_info_human(capsys) -> None:
