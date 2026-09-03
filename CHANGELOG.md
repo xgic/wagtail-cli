@@ -17,5 +17,8 @@ and this project uses [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
-- setup adds `django.contrib.postgres` so Wagtail search can migrate on
-  PostgreSQL.
+- setup inserts `django.contrib.postgres` into the generated
+  `<project>/settings/base.py` `INSTALLED_APPS` (immediately before
+  `django.contrib.admin`) so Wagtail search (`SearchVectorField` /
+  `GinIndex`) can migrate on PostgreSQL (`postgres.E005`). Not added
+  to the thin GitHub template.

@@ -65,7 +65,7 @@ xgic wagtail setup
 ```
 
 `xgic wagtail` with no action prints full usage and exits `2`.
-`xgic wagtail setup` is idempotent: config JSON, Compose `.env`, `wagtail start` when missing, Django `DATABASES` on **PostgreSQL**. SQLite is not an XGIC default.
+`xgic wagtail setup` is idempotent: config JSON, Compose `.env`, `wagtail start` when missing, Django `DATABASES` on **PostgreSQL**, and `django.contrib.postgres` in the generated `<project>/settings/base.py` `INSTALLED_APPS` (immediately before `django.contrib.admin`, for Wagtail search `SearchVectorField` / `GinIndex`). SQLite is not an XGIC default. The thin GitHub template does not vendor that settings file.
 
 ### Install (PyPI)
 
@@ -86,7 +86,7 @@ uv pip install "git+https://github.com/xgic/wagtail-cli.git@main"
 |---------|---------|
 | `xgic wagtail` | Full usage (missing ACTION) |
 | `xgic wagtail info` | Module identity (`--json` for machine output) |
-| `xgic wagtail setup [--quiet]` | First-run: config JSON, `.devcontainer/.env`, `wagtail start` if needed, PostgreSQL settings |
+| `xgic wagtail setup [--quiet]` | First-run: config JSON, `.devcontainer/.env`, `wagtail start` if needed, PostgreSQL `DATABASES` + `django.contrib.postgres` in generated `settings/base.py` |
 | `xgic wagtail schema [--output PATH]` | Write JSON Schema for `create-wagtail-config.json` (IntelliSense) |
 | `xgic wagtail --help` | Same usage listing |
 

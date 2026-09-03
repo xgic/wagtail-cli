@@ -86,23 +86,38 @@ def patch_databases(text: str) -> tuple[str, bool]:
     return updated, updated != text
 
 
+# Inserted into the generated project's settings/base.py INSTALLED_APPS,
+# immediately before django.contrib.admin (Wagtail start template).
+_POSTGRES_APP_INSERT = (
+    '"django.contrib.postgres",  '
+    "# Wagtail postgres search (SearchVectorField / GinIndex)\n"
+    '    "django.contrib.admin"'
+)
+
+
 def ensure_postgres_installed_apps(text: str) -> tuple[str, bool]:
-    """Ensure ``django.contrib.postgres`` is in INSTALLED_APPS (Wagtail search)."""
+    """Insert ``django.contrib.postgres`` into generated ``INSTALLED_APPS``.
+
+    **Where:** ``<project>/settings/base.py`` created by ``wagtail start``,
+    in the Django contrib block, immediately before ``django.contrib.admin``.
+    Not added to the thin GitHub template itself.
+
+    **Why:** Wagtail's default database search backend on PostgreSQL uses
+    ``SearchVectorField`` and ``GinIndex``. Without this app, ``migrate``
+    fails with ``postgres.E005``. The stock ``wagtail start`` template omits
+    it because it defaults to SQLite.
+    """
     if "django.contrib.postgres" in text:
         return text, False
     needle = '"django.contrib.admin"'
     if needle not in text:
         return text, False
-    updated = text.replace(
-        needle,
-        '"django.contrib.postgres",\n    "django.contrib.admin"',
-        1,
-    )
+    updated = text.replace(needle, _POSTGRES_APP_INSERT, 1)
     return updated, updated != text
 
 
 def patch_settings_base(settings_base: Path) -> bool:
-    """Patch ``settings/base.py`` in place. Return True if the file changed."""
+    """Patch generated ``settings/base.py``: PostgreSQL DATABASES + INSTALLED_APPS."""
     original = settings_base.read_text(encoding="utf-8")
     updated, db_changed = patch_databases(original)
     updated, apps_changed = ensure_postgres_installed_apps(updated)
