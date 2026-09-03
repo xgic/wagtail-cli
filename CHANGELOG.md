@@ -14,3 +14,11 @@ and this project uses [Semantic Versioning](https://semver.org/).
 - `xgic wagtail setup` (idempotent PostgreSQL site ensure) and
   `xgic wagtail schema` (create-wagtail-config JSON Schema). SQLite is
   not an XGIC default.
+
+### Fixed
+
+- setup inserts `django.contrib.postgres` into the generated
+  `<project>/settings/base.py` `INSTALLED_APPS` (immediately before
+  `django.contrib.admin`) so Wagtail search (`SearchVectorField` /
+  `GinIndex`) can migrate on PostgreSQL (`postgres.E005`). Not added
+  to the thin GitHub template.

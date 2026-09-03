@@ -7,6 +7,7 @@ from pathlib import Path
 from xgic.cli.wagtail.config import get_db_adapter, load_create_wagtail_config
 from xgic.cli.wagtail.env_helpers import generate_env_content
 from xgic.cli.wagtail.project import (
+    ensure_postgres_installed_apps,
     ensure_wagtail_project,
     is_wagtail_project_complete,
     patch_databases,
@@ -17,6 +18,10 @@ SQLITE_SETTINGS = '''from pathlib import Path
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 BASE_DIR = PROJECT_DIR.parent
+
+INSTALLED_APPS = [
+    "django.contrib.admin",
+]
 
 DATABASES = {
     "default": {
@@ -46,6 +51,20 @@ def test_patch_databases_replaces_sqlite() -> None:
     assert "sqlite3" not in updated
     assert "import os" in updated
     assert "POSTGRES_HOST" in updated
+
+
+def test_ensure_postgres_installed_apps() -> None:
+    src = 'INSTALLED_APPS = [\n    "django.contrib.admin",\n]\n'
+    updated, changed = ensure_postgres_installed_apps(src)
+    assert changed
+    assert '"django.contrib.postgres"' in updated
+    assert "SearchVectorField" in updated
+    assert updated.index("django.contrib.postgres") < updated.index(
+        "django.contrib.admin"
+    )
+    again, changed_again = ensure_postgres_installed_apps(updated)
+    assert changed_again is False
+    assert again == updated
 
 
 def test_patch_databases_idempotent() -> None:
@@ -85,6 +104,8 @@ def test_setup_patches_existing_project(tmp_path: Path) -> None:
     assert rc == 0
     text = settings.read_text(encoding="utf-8")
     assert "django.db.backends.postgresql" in text
+    assert '"django.contrib.postgres"' in text
+    assert text.index("django.contrib.postgres") < text.index("django.contrib.admin")
     assert (tmp_path / ".devcontainer" / ".env").is_file()
     assert (tmp_path / ".devcontainer" / "create-wagtail-config.json").is_file()
     assert (tmp_path / ".devcontainer" / "create-wagtail-config.schema.json").is_file()

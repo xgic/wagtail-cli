@@ -14,7 +14,7 @@ Public repository. Follow https://github.com/xgic/ai for multi-repo standards.
 - Nested `xgic wagtail …` product commands via entry points (`xgic.cli.commands`)
 - Missing ACTION prints full usage (exit 2)
 - `info` reports experimental module identity
-- `setup` ensures a Wagtail site on **PostgreSQL** (Compose `postgres` service); not SQLite
+- `setup` ensures a Wagtail site on **PostgreSQL** (Compose `postgres` service); not SQLite. It patches generated `<project>/settings/base.py`: `DATABASES` plus `django.contrib.postgres` in `INSTALLED_APPS` immediately before `django.contrib.admin` (Wagtail search `SearchVectorField` / `GinIndex`; stock `wagtail start` omits it because it defaults to SQLite). Not added to the thin GitHub template.
 - `schema` writes JSON Schema for `.devcontainer/create-wagtail-config.json`
 
 ## Out of scope
