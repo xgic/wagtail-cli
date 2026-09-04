@@ -24,7 +24,7 @@ Public repository. Follow https://github.com/xgic/ai for multi-repo standards.
 - Private host defaults or internal inventory
 - Thin CLI framework / env detection → https://github.com/xgic/cli
 - Dev Container / Docker Compose lifecycle → https://github.com/xgic/dev-cli
-- StreamField / site content models → https://github.com/xgic/wagtail (empty-site gate)
+- StreamField / site content models → consumer site repositories (https://github.com/xgic/wagtail stays an empty template)
 - Site Compose / template files → https://github.com/xgic/wagtail
 - Image producer → https://github.com/xgic/wagtail-dev
 - Payload CMS commands → https://github.com/xgic/payload-cms-cli
