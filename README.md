@@ -2,7 +2,11 @@
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![CI](https://github.com/xgic/wagtail-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/xgic/wagtail-cli/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/xgic-wagtail-cli.svg)](https://pypi.org/project/xgic-wagtail-cli/)
 [![Python](https://img.shields.io/badge/python-3.14+-blue?logo=python&logoColor=white)](https://www.python.org/)
+[![Release](https://img.shields.io/github/v/release/xgic/wagtail-cli?include_prereleases)](https://github.com/xgic/wagtail-cli/releases)
+[![Producer](https://img.shields.io/github/v/release/xgic/wagtail-dev?label=wagtail-dev)](https://github.com/xgic/wagtail-dev/releases)
+[![GHCR image](https://img.shields.io/badge/GHCR-wagtail--dev-blue?logo=github)](https://github.com/users/xgic/packages/container/package/wagtail-dev)
 
 **Wagtail product commands for the modular [XGIC CLI](https://github.com/xgic/cli)—ops under
 `xgic wagtail …`.**
@@ -72,15 +76,17 @@ xgic wagtail dev
 
 ### Install (PyPI)
 
+```bash
+uv pip install "xgic-cli>=0.2.1" "xgic-wagtail-cli>=0.1.0"
+xgic wagtail --help
+xgic wagtail info
+xgic wagtail setup
+xgic wagtail dev
+```
+
 PyPI publish follows the hub
 [python-package-release.md](https://github.com/xgic/ai/blob/main/docs/python-package-release.md)
-path (RC → TestPyPI → PyPI). Core is on PyPI; until this module’s first
-release is published, install the module from a clone:
-
-```bash
-uv pip install "xgic-cli>=0.2.1"
-uv pip install "git+https://github.com/xgic/wagtail-cli.git@main"
-```
+path (RC → TestPyPI → PyPI).
 
 ---
 
