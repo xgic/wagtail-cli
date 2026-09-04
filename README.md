@@ -77,7 +77,7 @@ xgic wagtail dev
 ### Install (PyPI)
 
 ```bash
-uv pip install "xgic-cli>=0.2.1" "xgic-wagtail-cli>=0.1.0"
+uv pip install "xgic-wagtail-cli>=0.1.0"
 xgic wagtail --help
 xgic wagtail info
 xgic wagtail setup
