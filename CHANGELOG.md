@@ -7,8 +7,11 @@ and this project uses [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
 
+## [0.1.0rc1] - 2026-09-04
+
 ### Added
 
+- First TestPyPI release candidate.
 - `xgic wagtail dev`: wait for PostgreSQL, `migrate --noinput`, then
   `manage.py runserver 0.0.0.0:8000`. Requires `xgic wagtail setup` first.
 - Bootstrap `xgic.cli.wagtail` (`xgic wagtail` / `xgic wagtail info`).
