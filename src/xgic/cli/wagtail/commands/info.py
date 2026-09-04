@@ -9,17 +9,15 @@ from xgic.cli.utils.output import print_info, print_success
 from xgic.cli.wagtail import __version__
 
 
-def run_info(args: argparse.Namespace) -> int:
+def run_info(ctx: argparse.Namespace) -> int:
     """Print Wagtail CLI module identity and capabilities."""
+    args = getattr(ctx, "args", ctx)
     payload = {
         "module": "xgic.cli.wagtail",
         "package": "xgic-wagtail-cli",
         "version": __version__,
         "status": "experimental",
-        "commands": ["info", "setup", "schema"],
-        "planned": [
-            "dev server helpers",
-        ],
+        "commands": ["info", "setup", "schema", "dev"],
         "repository": "https://github.com/xgic/wagtail-cli",
         "template": "https://github.com/xgic/wagtail",
         "producer": "https://github.com/xgic/wagtail-dev",
@@ -31,6 +29,6 @@ def run_info(args: argparse.Namespace) -> int:
     print_success(f"XGIC Wagtail CLI {__version__} (experimental)")
     print_info("Namespace: xgic.cli.wagtail")
     print_info("Repo: https://github.com/xgic/wagtail-cli")
-    print_info("Commands: info, setup, schema")
+    print_info("Commands: info, setup, schema, dev")
     print_info("Template: https://github.com/xgic/wagtail")
     return 0

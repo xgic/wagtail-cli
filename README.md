@@ -62,9 +62,12 @@ uv pip install -e ".[dev]"
 xgic wagtail
 xgic wagtail info
 xgic wagtail setup
+xgic wagtail dev
 ```
 
 `xgic wagtail` with no action prints full usage and exits `2`.
+`xgic wagtail dev` waits for PostgreSQL, runs `migrate --noinput`, then
+`python manage.py runserver 0.0.0.0:8000`. Requires a site from `setup`.
 `xgic wagtail setup` is idempotent: config JSON, Compose `.env`, `wagtail start` when missing, Django `DATABASES` on **PostgreSQL**, and `django.contrib.postgres` in the generated `<project>/settings/base.py` `INSTALLED_APPS` (immediately before `django.contrib.admin`, for Wagtail search `SearchVectorField` / `GinIndex`). SQLite is not an XGIC default. The thin GitHub template does not vendor that settings file.
 
 ### Install (PyPI)

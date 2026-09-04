@@ -16,6 +16,8 @@ Public repository. Follow https://github.com/xgic/ai for multi-repo standards.
 - `info` reports experimental module identity
 - `setup` ensures a Wagtail site on **PostgreSQL** (Compose `postgres` service); not SQLite. It patches generated `<project>/settings/base.py`: `DATABASES` plus `django.contrib.postgres` in `INSTALLED_APPS` immediately before `django.contrib.admin` (Wagtail search `SearchVectorField` / `GinIndex`; stock `wagtail start` omits it because it defaults to SQLite). Not added to the thin GitHub template.
 - `schema` writes JSON Schema for `.devcontainer/create-wagtail-config.json`
+- `dev` waits for PostgreSQL, runs `migrate --noinput`, then
+  `manage.py runserver 0.0.0.0:8000`. Requires a site from `setup`.
 
 ## Out of scope
 
