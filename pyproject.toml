@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "xgic-wagtail-cli"
-version = "0.1.0"
+version = "0.1.0rc1"
 description = "XGIC CLI Wagtail module - Wagtail product commands (xgic.cli.wagtail)."
 readme = "README.md"
 license = { text = "Apache-2.0" }
@@ -13,7 +13,7 @@ authors = [
 ]
 requires-python = ">=3.14"
 dependencies = [
-    "xgic-cli>=0.2.0",
+    "xgic-cli>=0.2.1",
     "rich>=13.7",
 ]
 keywords = [

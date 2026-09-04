@@ -6,6 +6,7 @@ Product commands live under the ``wagtail`` group::
     xgic wagtail info
     xgic wagtail setup
     xgic wagtail schema
+    xgic wagtail dev
     xgic wagtail --help
 
 Missing ACTION prints full usage (not a short argparse required-args error).
@@ -15,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 
+from xgic.cli.wagtail.commands.dev import run_dev
 from xgic.cli.wagtail.commands.info import run_info
 from xgic.cli.wagtail.commands.schema import run_schema
 from xgic.cli.wagtail.commands.setup import run_setup
@@ -74,3 +76,14 @@ def register(
         help="Override schema output path",
     )
     schema.set_defaults(func=run_schema)
+
+    dev = wagtail_sub.add_parser(
+        "dev",
+        help="Migrate and run the Wagtail/Django development server",
+    )
+    dev.add_argument(
+        "--quiet",
+        action="store_true",
+        help="Suppress non-error output",
+    )
+    dev.set_defaults(func=run_dev)

@@ -34,6 +34,7 @@ def test_missing_action_prints_full_usage(capsys) -> None:
     assert "info" in out
     assert "setup" in out
     assert "schema" in out
+    assert "dev" in out
     assert "the following arguments are required" not in out.lower()
 
 
@@ -47,6 +48,8 @@ def test_run_info_json(capsys) -> None:
     assert "info" in data["commands"]
     assert "setup" in data["commands"]
     assert "schema" in data["commands"]
+    assert "dev" in data["commands"]
+    assert "planned" not in data
 
 
 def test_run_info_human(capsys) -> None:
