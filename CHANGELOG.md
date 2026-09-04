@@ -11,7 +11,7 @@ and this project uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- First TestPyPI release candidate.
+- First TestPyPI release candidate. Depends on `xgic-cli>=0.2.1`.
 - `xgic wagtail dev`: wait for PostgreSQL, `migrate --noinput`, then
   `manage.py runserver 0.0.0.0:8000`. Requires `xgic wagtail setup` first.
 - Bootstrap `xgic.cli.wagtail` (`xgic wagtail` / `xgic wagtail info`).

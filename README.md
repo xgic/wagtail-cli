@@ -74,10 +74,11 @@ xgic wagtail dev
 
 PyPI publish follows the hub
 [python-package-release.md](https://github.com/xgic/ai/blob/main/docs/python-package-release.md)
-path (RC → TestPyPI → PyPI). Until the first release is published, install from a clone:
+path (RC → TestPyPI → PyPI). Core is on PyPI; until this module’s first
+release is published, install the module from a clone:
 
 ```bash
-uv pip install "git+https://github.com/xgic/cli.git@main"
+uv pip install "xgic-cli>=0.2.1"
 uv pip install "git+https://github.com/xgic/wagtail-cli.git@main"
 ```
 
