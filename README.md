@@ -4,6 +4,9 @@
 [![CI](https://github.com/xgic/wagtail-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/xgic/wagtail-cli/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/xgic-wagtail-cli.svg)](https://pypi.org/project/xgic-wagtail-cli/)
 [![Python](https://img.shields.io/badge/python-3.14+-blue?logo=python&logoColor=white)](https://www.python.org/)
+[![Release](https://img.shields.io/github/v/release/xgic/wagtail-cli?include_prereleases)](https://github.com/xgic/wagtail-cli/releases)
+[![Producer](https://img.shields.io/github/v/release/xgic/wagtail-dev?label=wagtail-dev)](https://github.com/xgic/wagtail-dev/releases)
+[![GHCR image](https://img.shields.io/badge/GHCR-wagtail--dev-blue?logo=github)](https://github.com/users/xgic/packages/container/package/wagtail-dev)
 
 **Wagtail product commands for the modular [XGIC CLI](https://github.com/xgic/cli)—ops under
 `xgic wagtail …`.**
