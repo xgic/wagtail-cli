@@ -72,7 +72,9 @@ xgic wagtail dev
 `xgic wagtail` with no action prints full usage and exits `2`.
 `xgic wagtail dev` waits for PostgreSQL, runs `migrate --noinput`, then
 `python manage.py runserver 0.0.0.0:8000`. Requires a site from `setup`.
-`xgic wagtail setup` is idempotent: config JSON, Compose `.env`, `wagtail start` when missing, Django `DATABASES` on **PostgreSQL**, and `django.contrib.postgres` in the generated `<project>/settings/base.py` `INSTALLED_APPS` (immediately before `django.contrib.admin`, for Wagtail search `SearchVectorField` / `GinIndex`). SQLite is not an XGIC default. The thin GitHub template does not vendor that settings file.
+`xgic wagtail setup` is idempotent: config JSON, Compose `.env`, `wagtail start` when missing, Django `DATABASES` on **PostgreSQL**, and `django.contrib.postgres` in the generated `<project>/settings/base.py` `INSTALLED_APPS` (immediately before `django.contrib.admin`, for Wagtail search `SearchVectorField` / `GinIndex`). SQLite is not an XGIC default. The thin GitHub template does not vendor that settings file. `.devcontainer/.env` is expected to be missing until the first `setup`.
+
+Generic `xgic logs` / `xgic check` / `xgic up` (from [xgic/dev-cli](https://github.com/xgic/dev-cli)) talk to the **host Docker engine**. In the Dev Container that is Docker-outside-of-Docker (CLI + mounted socket from [xgic/wagtail-dev](https://github.com/xgic/wagtail-dev)); not Docker-in-Docker. Site work stays `xgic wagtail setup` then `xgic wagtail dev`.
 
 ### Install (PyPI)
 
