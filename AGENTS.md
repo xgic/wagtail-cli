@@ -18,6 +18,7 @@ Public repository. Follow https://github.com/xgic/ai for multi-repo standards.
 - `schema` writes JSON Schema for `.devcontainer/create-wagtail-config.json`
 - `dev` waits for PostgreSQL, runs `migrate --noinput`, then
   `manage.py runserver 0.0.0.0:8000`. Requires a site from `setup`.
+- Compose lifecycle (`xgic logs` / `up` / `check`) is [xgic/dev-cli](https://github.com/xgic/dev-cli). Inside the Dev Container it uses Docker-outside-of-Docker (producer image CLI + engine socket). Do not enable Docker-in-Docker.
 
 ## Out of scope
 
