@@ -7,6 +7,13 @@ and this project uses [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
 
+## [0.2.0rc1] - 2026-10-22
+
+### Added
+
+- TestPyPI candidate for 0.2.0, for AIS orchestration testing.
+  The changes are the 0.2.0 backup and restore commands below.
+
 ## [0.2.0] - 2026-10-22
 
 ### Added
