@@ -181,6 +181,32 @@ def test_settings_restored_only_with_dest_and_yes(tmp_path: Path) -> None:
     assert oct(dest.stat().st_mode & 0o777) == oct(0o600)
 
 
+def test_restore_media_replaces_the_directory(tmp_path: Path) -> None:
+    from xgic.cli.wagtail.site import DockerComposeSite
+
+    media = tmp_path / "media"
+    media.mkdir()
+    (media / "old.txt").write_text("old", encoding="utf-8")
+    fresh = tmp_path / "fresh"
+    fresh.mkdir()
+    (fresh / "new.txt").write_text("new", encoding="utf-8")
+    media_tar = tmp_path / "media.tar"
+    subprocess.run(["tar", "-cf", str(media_tar), "-C", str(fresh), "."], check=True)
+    site = DockerComposeSite(
+        project_dir=tmp_path,
+        compose_file=None,
+        web_service="web",
+        postgres_service="postgres",
+        database="wagtail",
+        db_user="wagtail",
+        media_dir=media,
+        base_url="http://127.0.0.1:8000",
+    )
+    site.restore_media(media_tar)
+    assert not (media / "old.txt").exists()
+    assert (media / "new.txt").read_text(encoding="utf-8") == "new"
+
+
 def test_count_helper_reads_total_count() -> None:
     from xgic.cli.wagtail.site import count_from_payload
 

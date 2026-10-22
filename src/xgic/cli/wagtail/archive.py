@@ -50,17 +50,22 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def payload_sha256(parts: BackupParts) -> str:
-    """Hash ``database.dump``, then ``media.tar``, then the settings file."""
+def payload_sha256(*paths: Path) -> str:
+    """Hash the data members in order, in 1 MiB chunks."""
     digest = hashlib.sha256()
-    paths = [parts.database_dump, parts.media_tar]
-    if parts.settings_file is not None:
-        paths.append(parts.settings_file)
     for path in paths:
         with path.open("rb") as handle:
             for chunk in iter(lambda: handle.read(_CHUNK), b""):
                 digest.update(chunk)
     return digest.hexdigest()
+
+
+def payload_paths(parts: BackupParts) -> list[Path]:
+    """``database.dump``, ``media.tar``, then the settings file when present."""
+    paths = [parts.database_dump, parts.media_tar]
+    if parts.settings_file is not None:
+        paths.append(parts.settings_file)
+    return paths
 
 
 def sidecar_line(digest: str, archive_name: str) -> str:
@@ -92,7 +97,7 @@ class LandingPair:
     def publish(self, parts: BackupParts) -> Path:
         """Write the pair. Source files are not modified."""
         self._require_files(parts)
-        if parts.manifest.archive_sha256 != payload_sha256(parts):
+        if parts.manifest.payload_sha256 != payload_sha256(*payload_paths(parts)):
             raise ArchiveError("manifest payload digest does not match the members")
         if parts.manifest.artifacts.database.sha256 != sha256_file(parts.database_dump):
             raise ArchiveError("manifest digest does not match database.dump")
@@ -230,15 +235,10 @@ class LandingPair:
             raise ArchiveError("database.dump does not match the manifest")
         if sha256_file(dest / "media.tar") != manifest.artifacts.media.sha256:
             raise ArchiveError("media.tar does not match the manifest")
-        digest = hashlib.sha256()
         paths = [dest / "database.dump", dest / "media.tar"]
         if manifest.artifacts.settings is not None:
             paths.append(dest / "settings.file")
-        for path in paths:
-            with path.open("rb") as handle:
-                for chunk in iter(lambda: handle.read(_CHUNK), b""):
-                    digest.update(chunk)
-        if digest.hexdigest() != manifest.archive_sha256:
+        if payload_sha256(*paths) != manifest.payload_sha256:
             raise ArchiveError("payload digest does not match the manifest")
         if manifest.artifacts.settings is not None:
             settings = dest / "settings.file"

@@ -54,8 +54,10 @@ def run_backup(args: argparse.Namespace, site: SiteGateway | None = None) -> int
                 raise ArchiveError(f"missing {settings}")
             backup_id = _backup_id(snapshot.wagtail_version)
             settings_member = None
+            hashed = [database, media]
             if settings is not None:
                 settings_member = Member(name="settings.file", sha256=sha256_file(settings))
+                hashed.append(settings)
             parts = BackupParts(
                 backup_id=backup_id,
                 database_dump=database,
@@ -66,15 +68,7 @@ def run_backup(args: argparse.Namespace, site: SiteGateway | None = None) -> int
                     wagtail_version=snapshot.wagtail_version,
                     postgres_version=snapshot.postgres_version,
                     backup_id=backup_id,
-                    archive_sha256=payload_sha256(
-                        BackupParts(
-                            backup_id=backup_id,
-                            database_dump=database,
-                            media_tar=media,
-                            settings_file=settings,
-                            manifest=_placeholder_manifest(backup_id),
-                        )
-                    ),
+                    payload_sha256=payload_sha256(*hashed),
                     artifacts=Artifacts(
                         database=Member(name="database.dump", sha256=sha256_file(database)),
                         media=Member(name="media.tar", sha256=sha256_file(media)),
@@ -104,23 +98,6 @@ def run_backup(args: argparse.Namespace, site: SiteGateway | None = None) -> int
         args,
         {"ok": True, "action": "backup", "archive": str(archive), "detail": "published"},
         0,
-    )
-
-
-def _placeholder_manifest(backup_id: str) -> BackupManifest:
-    """Unused by the payload hash. Present so BackupParts can be constructed."""
-    return BackupManifest(
-        created_at=datetime.now(UTC),
-        wagtail_version="0",
-        postgres_version="0",
-        backup_id=backup_id,
-        archive_sha256="0" * 64,
-        artifacts=Artifacts(
-            database=Member(name="database.dump", sha256="0" * 64),
-            media=Member(name="media.tar", sha256="0" * 64),
-            omitted=list(OMITTED),
-        ),
-        counts=Counts(pages=0, images=0, documents=0),
     )
 
 

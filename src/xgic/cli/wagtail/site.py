@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import os
+import shutil
 import subprocess
 import urllib.error
 import urllib.request
@@ -26,6 +28,13 @@ class SiteSnapshot:
     pages: int
     images: int
     documents: int
+
+
+class CommandRunner(Protocol):
+    """Run one command and return its result."""
+
+    def __call__(self, args: list[str]) -> subprocess.CompletedProcess[str]:
+        """Run ``args``."""
 
 
 class SiteGateway(Protocol):
@@ -93,7 +102,7 @@ class DockerComposeSite:
         db_user: str,
         media_dir: Path,
         base_url: str,
-        runner: object | None = None,
+        runner: CommandRunner | None = None,
     ) -> None:
         self.project_dir = project_dir
         self.compose_file = compose_file
@@ -103,7 +112,7 @@ class DockerComposeSite:
         self.db_user = db_user
         self.media_dir = media_dir
         self.base_url = base_url.rstrip("/")
-        self._runner = runner
+        self._runner: CommandRunner = runner or _run_text
 
     def snapshot(self) -> SiteSnapshot:
         wagtail_version, postgres_version = self.current_versions()
@@ -194,13 +203,19 @@ class DockerComposeSite:
             raise SiteError(detail)
 
     def restore_media(self, media_tar: Path) -> None:
-        self.media_dir.mkdir(parents=True, exist_ok=True)
-        completed = self._run(
-            ["tar", "-xf", str(media_tar), "-C", str(self.media_dir)]
-        )
+        if self.media_dir.is_symlink():
+            raise SiteError("refusing to replace a symlink")
+        staging = self.media_dir.with_name(self.media_dir.name + ".restore")
+        shutil.rmtree(staging, ignore_errors=True)
+        staging.mkdir(parents=True, mode=0o700)
+        completed = self._run(["tar", "-xf", str(media_tar), "-C", str(staging)])
         if completed.returncode != 0:
+            shutil.rmtree(staging, ignore_errors=True)
             detail = (completed.stderr or "").strip() or "media extract failed"
             raise SiteError(detail)
+        if self.media_dir.exists():
+            shutil.rmtree(self.media_dir)
+        os.replace(staging, self.media_dir)
 
     def _exec(self, service: str, args: list[str]) -> str:
         completed = self._run(self._compose(["exec", "-T", service, *args]))
@@ -232,6 +247,8 @@ class DockerComposeSite:
             raise SiteError(detail)
 
     def _run(self, args: list[str]) -> subprocess.CompletedProcess[str]:
-        if self._runner is not None:
-            return self._runner(args)  # type: ignore[operator]
-        return subprocess.run(args, capture_output=True, text=True, check=False)
+        return self._runner(args)
+
+
+def _run_text(args: list[str]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(args, capture_output=True, text=True, check=False)

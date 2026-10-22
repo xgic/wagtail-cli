@@ -64,7 +64,13 @@ class BackupManifest(BaseModel):
     wagtail_version: str = Field(min_length=1)
     postgres_version: str = Field(min_length=1)
     backup_id: str = Field(min_length=1)
-    archive_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    payload_sha256: str = Field(
+        pattern=r"^[0-9a-f]{64}$",
+        description=(
+            "SHA-256 of database.dump, then media.tar, then settings.file "
+            "when present. The sidecar is the SHA-256 of the .tar.zst."
+        ),
+    )
     artifacts: Artifacts
     counts: Counts
     control: Control = Field(default_factory=Control)
