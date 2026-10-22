@@ -19,7 +19,10 @@ Public repository. Follow https://github.com/xgic/ai for multi-repo standards.
 - `dev` waits for PostgreSQL, runs `migrate --noinput`, then
   `manage.py runserver 0.0.0.0:8000`. Requires a site from `setup`.
 - `backup` publishes one `.tar.zst` and `.sha256`. The manifest stays inside
-  the archive. `restore` checks that pair before it writes and requires `--yes`.
+  the archive. The name is `{project}_{YYYYMMDD}T{HHMMSS}Z_{version}.tar.zst`
+  (example `wagtail-example_20261022T153045Z_8.0.1.tar.zst`). `--project` is
+  required and must be kebab-case. `restore` opens `--archive` and does not
+  take `--project`. `restore` checks that pair before it writes and requires `--yes`.
   `--media` defaults to `check`: added or newer media files stop the restore
   and are listed. `replace` swaps the media directory. `merge` keeps files
   that are not in the archive.

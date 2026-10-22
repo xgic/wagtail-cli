@@ -11,6 +11,9 @@ and this project uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- `xgic wagtail backup` requires `--project` and publishes
+  `{project}_{YYYYMMDD}T{HHMMSS}Z_{version}.tar.zst` with a `.sha256` sidecar.
+  Example: `wagtail-example_20261022T153045Z_8.0.1.tar.zst`.
 - `xgic wagtail backup` publishes one `.tar.zst` and a `.sha256` sidecar.
   `backup-manifest.json` is inside the archive. It records `wagtail_version`,
   the full PostgreSQL `server_version`, and page, image, and document counts
