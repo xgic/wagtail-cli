@@ -67,6 +67,9 @@ xgic wagtail
 xgic wagtail info
 xgic wagtail setup
 xgic wagtail dev
+xgic wagtail backup --help
+xgic wagtail restore --backup-dir ./backups --dry-run
+xgic wagtail restore --backup-dir ./backups --yes --media replace
 ```
 
 `xgic wagtail` with no action prints full usage and exits `2`.

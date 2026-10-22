@@ -7,6 +7,21 @@ and this project uses [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
 
+## [0.2.0] - 2026-10-22
+
+### Added
+
+- `xgic wagtail backup` publishes one `.tar.zst` and a `.sha256` sidecar.
+  `backup-manifest.json` is inside the archive. It records `wagtail_version`,
+  the full PostgreSQL `server_version`, and page, image, and document counts
+  from the Wagtail API.
+- `xgic wagtail restore` checks the sidecar and manifest before it writes.
+  `--dry-run` does not change the database or media. A write requires `--yes`.
+  `--media check` (the default) stops when live media was added or edited
+  after the backup and lists those files. `--media replace` swaps the
+  directory. `--media merge` overwrites in place and keeps extra files.
+  After restore, the same three API counts must match the manifest.
+
 ## [0.1.0] - 2026-09-04
 
 ### Added
