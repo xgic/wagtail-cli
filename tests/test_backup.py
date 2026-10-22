@@ -74,6 +74,7 @@ class FakeSite:
 
 def _args(tmp_path: Path, **overrides: object) -> argparse.Namespace:
     values = {
+        "project": "wagtail-example",
         "backup_dir": str(tmp_path / "backups"),
         "base_url": "http://127.0.0.1:8000",
         "project_dir": None,
@@ -269,3 +270,44 @@ def test_count_helper_reads_total_count() -> None:
     from xgic.cli.wagtail.site import count_from_payload
 
     assert count_from_payload({"meta": {"total_count": 4}, "items": []}, "url") == 4
+
+
+def test_backup_name_uses_project_and_utc_second(tmp_path: Path) -> None:
+    site = FakeSite(tmp_path)
+    assert run_backup(_args(tmp_path), site) == 0
+    archives = list((tmp_path / "backups").glob("*.tar.zst"))
+    assert len(archives) == 1
+    assert archives[0].name.startswith("wagtail-example_")
+    assert archives[0].name.endswith("_8.0.1.tar.zst")
+    sidecar = archives[0].with_name(archives[0].name + ".sha256")
+    assert sidecar.read_text(encoding="utf-8").endswith(f"  {archives[0].name}\n")
+    manifest = LandingPair(archives[0].parent).manifest_of(archives[0])
+    assert manifest.backup_id == archives[0].name.removesuffix(".tar.zst")
+
+
+def test_backup_refuses_a_project_that_is_not_kebab_case(tmp_path: Path) -> None:
+    site = FakeSite(tmp_path)
+    assert run_backup(_args(tmp_path, project="Wagtail_Example"), site) == 1
+
+
+def test_backup_refuses_an_existing_archive(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from datetime import UTC, datetime
+
+    from xgic.cli.wagtail.commands import backup as backup_module
+
+    class Frozen(datetime):
+        @classmethod
+        def now(cls, tz: object = None) -> datetime:
+            return datetime(2026, 10, 22, 15, 30, 45, tzinfo=UTC)
+
+    monkeypatch.setattr(backup_module, "datetime", Frozen)
+    site = FakeSite(tmp_path)
+    assert run_backup(_args(tmp_path), site) == 0
+    assert run_backup(_args(tmp_path), site) == 1
+
+
+def test_restore_does_not_require_project(tmp_path: Path) -> None:
+    site = FakeSite(tmp_path)
+    assert run_backup(_args(tmp_path), site) == 0
+    code = run_restore(_args(tmp_path, project=None, yes=True, media="replace"), site)
+    assert code == 0

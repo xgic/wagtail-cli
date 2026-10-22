@@ -114,6 +114,11 @@ def register(
     )
     _add_site_args(backup)
     backup.add_argument(
+        "--project",
+        required=True,
+        help="Kebab-case Compose project used in the archive name",
+    )
+    backup.add_argument(
         "--settings-file",
         default=None,
         help="Optional settings file to copy into the archive. The file is not modified.",

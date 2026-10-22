@@ -106,6 +106,8 @@ class LandingPair:
         archive_name = f"{parts.backup_id}.tar.zst"
         self.output_dir.mkdir(parents=True, exist_ok=True)
         archive = self.output_dir / archive_name
+        if archive.exists():
+            raise ArchiveError(f"refusing to overwrite {archive.name}")
         partial = self.output_dir / f"{archive_name}.partial"
         sidecar_partial = self.output_dir / f"{archive_name}.sha256.partial"
         sidecar = archive.with_name(archive.name + ".sha256")

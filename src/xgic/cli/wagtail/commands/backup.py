@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from datetime import UTC, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -52,7 +53,7 @@ def run_backup(args: argparse.Namespace, site: SiteGateway | None = None) -> int
             settings = Path(args.settings_file) if args.settings_file else None
             if settings is not None and (not settings.is_file() or settings.is_symlink()):
                 raise ArchiveError(f"missing {settings}")
-            backup_id = _backup_id(snapshot.wagtail_version)
+            backup_id = _backup_id(args.project, snapshot.wagtail_version)
             settings_member = None
             hashed = [database, media]
             if settings is not None:
@@ -101,10 +102,17 @@ def run_backup(args: argparse.Namespace, site: SiteGateway | None = None) -> int
     )
 
 
-def _backup_id(wagtail_version: str) -> str:
-    now = datetime.now(UTC)
+_PROJECT = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+
+
+def _backup_id(project: str, wagtail_version: str) -> str:
+    if _PROJECT.fullmatch(project) is None:
+        raise ArchiveError("project must be kebab-case")
     safe = wagtail_version.replace("/", "-").replace(" ", "")
-    return f"{int(now.timestamp())}_{now.strftime('%Y_%m_%d')}_{safe}"
+    if not safe or "_" in safe:
+        raise ArchiveError("version must not contain underscores")
+    now = datetime.now(UTC)
+    return f"{project}_{now.strftime('%Y%m%dT%H%M%SZ')}_{safe}"
 
 
 def _site_from_args(args: argparse.Namespace) -> SiteGateway:
