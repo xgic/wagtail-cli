@@ -1,0 +1,187 @@
+"""Wagtail backup and restore pair."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import subprocess
+from pathlib import Path
+
+import pytest
+
+from xgic.cli.wagtail.archive import LandingPair
+from xgic.cli.wagtail.commands.backup import run_backup
+from xgic.cli.wagtail.commands.restore import run_restore
+from xgic.cli.wagtail.manifest import parse_manifest
+from xgic.cli.wagtail.site import SiteSnapshot
+
+
+class FakeSite:
+    def __init__(self, root: Path) -> None:
+        self.root = root
+        self.media = root / "media"
+        self.media.mkdir()
+        (self.media / "photo.jpg").write_bytes(b"jpeg-bytes")
+        self.dump = b"PGDMP-fake-dump"
+        self.snapshot_value = SiteSnapshot(
+            wagtail_version="8.0.1",
+            postgres_version="16.4",
+            pages=6,
+            images=2,
+            documents=1,
+        )
+        self.restored_dump: Path | None = None
+        self.restored_media = False
+        self.settings_written: Path | None = None
+        self.counts = (6, 2, 1)
+
+    def snapshot(self) -> SiteSnapshot:
+        return self.snapshot_value
+
+    def write_database(self, dest: Path) -> None:
+        dest.write_bytes(self.dump)
+
+    def write_media(self, dest: Path) -> None:
+        import subprocess
+
+        subprocess.run(
+            ["tar", "-cf", str(dest), "-C", str(self.media), "."],
+            check=True,
+        )
+
+    def restore_database(self, dump: Path) -> None:
+        self.restored_dump = dump
+
+    def restore_media(self, media_tar: Path) -> None:
+        self.restored_media = True
+        media_tar.read_bytes()
+
+    def current_versions(self) -> tuple[str, str]:
+        return self.snapshot_value.wagtail_version, self.snapshot_value.postgres_version
+
+    def current_counts(self) -> tuple[int, int, int]:
+        return self.counts
+
+
+def _args(tmp_path: Path, **overrides: object) -> argparse.Namespace:
+    values = {
+        "backup_dir": str(tmp_path / "backups"),
+        "base_url": "http://127.0.0.1:8000",
+        "project_dir": None,
+        "compose_file": None,
+        "web_service": "web",
+        "postgres_service": "postgres",
+        "database": "wagtail",
+        "db_user": "wagtail",
+        "media_dir": "media",
+        "json": True,
+        "settings_file": None,
+        "inventory": "",
+        "node": "",
+        "playbook": "",
+        "dry_run": False,
+        "archive": None,
+        "settings_dest": None,
+        "yes": False,
+    }
+    values.update(overrides)
+    return argparse.Namespace(**values)
+
+
+def test_dry_run_writes_nothing(tmp_path: Path) -> None:
+    site = FakeSite(tmp_path)
+    code = run_backup(_args(tmp_path, dry_run=True), site)
+    assert code == 0
+    assert not (tmp_path / "backups").exists()
+
+
+def test_backup_publishes_pair_with_inner_manifest(tmp_path: Path, capsys) -> None:
+    site = FakeSite(tmp_path)
+    code = run_backup(_args(tmp_path), site)
+    assert code == 0
+    report = json.loads(capsys.readouterr().out)
+    archive = Path(report["archive"])
+    assert archive.suffixes[-2:] == [".tar", ".zst"]
+    sidecar = archive.with_name(archive.name + ".sha256")
+    assert sidecar.read_text(encoding="utf-8").endswith(f"  {archive.name}\n")
+    assert list(archive.parent.glob("*.backup-manifest.json")) == []
+    manifest = LandingPair(archive.parent).manifest_of(archive)
+    assert manifest.wagtail_version == "8.0.1"
+    assert manifest.postgres_version == "16.4"
+    assert manifest.counts.pages == 6
+    assert manifest.counts.images == 2
+    assert manifest.counts.documents == 1
+    assert manifest.artifacts.omitted == ["search_index", "cache"]
+    assert manifest.artifacts.database.name == "database.dump"
+    listed = subprocess.run(
+        ["tar", "--zstd", "-tf", str(archive)],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert "backup-manifest.json" in listed.stdout
+    assert oct(archive.stat().st_mode & 0o777) == oct(0o600)
+
+
+def test_manifest_rejects_unknown_fields() -> None:
+    with pytest.raises(Exception, match="ValidationError"):
+        parse_manifest('{"schema_version": 1, "extra": true}')
+
+
+def test_restore_dry_run_does_not_write(tmp_path: Path) -> None:
+    site = FakeSite(tmp_path)
+    assert run_backup(_args(tmp_path), site) == 0
+    code = run_restore(_args(tmp_path, dry_run=True, yes=True), site)
+    assert code == 0
+    assert site.restored_dump is None
+    assert site.restored_media is False
+
+
+def test_restore_requires_yes(tmp_path: Path, capsys) -> None:
+    site = FakeSite(tmp_path)
+    assert run_backup(_args(tmp_path), site) == 0
+    capsys.readouterr()
+    code = run_restore(_args(tmp_path), site)
+    assert code == 1
+    assert "requires --yes" in capsys.readouterr().out
+    assert site.restored_dump is None
+
+
+def test_restore_refuses_version_mismatch(tmp_path: Path, capsys) -> None:
+    site = FakeSite(tmp_path)
+    assert run_backup(_args(tmp_path), site) == 0
+    site.snapshot_value = SiteSnapshot("8.0.1", "16.10", 6, 2, 1)
+    capsys.readouterr()
+    code = run_restore(_args(tmp_path, yes=True), site)
+    assert code == 1
+    assert "postgres_version" in capsys.readouterr().out
+    assert site.restored_dump is None
+
+
+def test_restore_checks_counts_after_write(tmp_path: Path, capsys) -> None:
+    site = FakeSite(tmp_path)
+    assert run_backup(_args(tmp_path), site) == 0
+    site.counts = (6, 2, 0)
+    capsys.readouterr()
+    code = run_restore(_args(tmp_path, yes=True), site)
+    assert code == 1
+    assert "API counts" in capsys.readouterr().out
+    assert site.restored_media is True
+
+
+def test_settings_restored_only_with_dest_and_yes(tmp_path: Path) -> None:
+    site = FakeSite(tmp_path)
+    settings = tmp_path / "settings.json"
+    settings.write_text('{"x": 1}\n', encoding="utf-8")
+    assert run_backup(_args(tmp_path, settings_file=str(settings)), site) == 0
+    dest = tmp_path / "out" / "settings.json"
+    code = run_restore(_args(tmp_path, yes=True, settings_dest=str(dest)), site)
+    assert code == 0
+    assert dest.read_text(encoding="utf-8") == '{"x": 1}\n'
+    assert oct(dest.stat().st_mode & 0o777) == oct(0o600)
+
+
+def test_count_helper_reads_total_count() -> None:
+    from xgic.cli.wagtail.site import count_from_payload
+
+    assert count_from_payload({"meta": {"total_count": 4}, "items": []}, "url") == 4

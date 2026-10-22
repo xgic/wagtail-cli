@@ -7,6 +7,8 @@ Product commands live under the ``wagtail`` group::
     xgic wagtail setup
     xgic wagtail schema
     xgic wagtail dev
+    xgic wagtail backup
+    xgic wagtail restore
     xgic wagtail --help
 
 Missing ACTION prints full usage (not a short argparse required-args error).
@@ -16,8 +18,10 @@ from __future__ import annotations
 
 import argparse
 
+from xgic.cli.wagtail.commands.backup import run_backup
 from xgic.cli.wagtail.commands.dev import run_dev
 from xgic.cli.wagtail.commands.info import run_info
+from xgic.cli.wagtail.commands.restore import run_restore
 from xgic.cli.wagtail.commands.schema import run_schema
 from xgic.cli.wagtail.commands.setup import run_setup
 
@@ -87,3 +91,46 @@ def register(
         help="Suppress non-error output",
     )
     dev.set_defaults(func=run_dev)
+
+    def _add_site_args(parser: argparse.ArgumentParser) -> None:
+        parser.add_argument("--backup-dir", required=True, help="Directory for the pair")
+        parser.add_argument(
+            "--base-url",
+            default="http://127.0.0.1:8000",
+            help="Wagtail origin for /api/v2/ listings",
+        )
+        parser.add_argument("--project-dir", default=None)
+        parser.add_argument("--compose-file", default=None)
+        parser.add_argument("--web-service", default="web")
+        parser.add_argument("--postgres-service", default="postgres")
+        parser.add_argument("--database", default="wagtail")
+        parser.add_argument("--db-user", default="wagtail")
+        parser.add_argument("--media-dir", default="media")
+        parser.add_argument("--json", action="store_true")
+
+    backup = wagtail_sub.add_parser(
+        "backup",
+        help="Publish a Wagtail .tar.zst pair",
+    )
+    _add_site_args(backup)
+    backup.add_argument(
+        "--settings-file",
+        default=None,
+        help="Optional settings file to copy into the archive. The file is not modified.",
+    )
+    backup.add_argument("--inventory", default="")
+    backup.add_argument("--node", default="")
+    backup.add_argument("--playbook", default="")
+    backup.add_argument("--dry-run", action="store_true")
+    backup.set_defaults(func=run_backup)
+
+    restore = wagtail_sub.add_parser(
+        "restore",
+        help="Restore a Wagtail .tar.zst pair",
+    )
+    _add_site_args(restore)
+    restore.add_argument("--archive", default=None, help="Pair to restore. Default: newest.")
+    restore.add_argument("--settings-dest", default=None)
+    restore.add_argument("--dry-run", action="store_true")
+    restore.add_argument("--yes", action="store_true")
+    restore.set_defaults(func=run_restore)

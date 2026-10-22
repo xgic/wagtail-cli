@@ -67,6 +67,8 @@ xgic wagtail
 xgic wagtail info
 xgic wagtail setup
 xgic wagtail dev
+xgic wagtail backup --help
+xgic wagtail restore --help
 ```
 
 `xgic wagtail` with no action prints full usage and exits `2`.
