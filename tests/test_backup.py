@@ -32,6 +32,7 @@ class FakeSite:
         )
         self.restored_dump: Path | None = None
         self.restored_media = False
+        self.merged_media = False
         self.settings_written: Path | None = None
         self.counts = (6, 2, 1)
 
@@ -55,6 +56,14 @@ class FakeSite:
     def restore_media(self, media_tar: Path) -> None:
         self.restored_media = True
         media_tar.read_bytes()
+
+    def merge_media(self, media_tar: Path) -> None:
+        self.merged_media = True
+        media_tar.read_bytes()
+
+    @property
+    def media_dir(self) -> Path:
+        return self.media
 
     def current_versions(self) -> tuple[str, str]:
         return self.snapshot_value.wagtail_version, self.snapshot_value.postgres_version
@@ -83,6 +92,7 @@ def _args(tmp_path: Path, **overrides: object) -> argparse.Namespace:
         "archive": None,
         "settings_dest": None,
         "yes": False,
+        "media": "check",
     }
     values.update(overrides)
     return argparse.Namespace(**values)
@@ -179,6 +189,54 @@ def test_settings_restored_only_with_dest_and_yes(tmp_path: Path) -> None:
     assert code == 0
     assert dest.read_text(encoding="utf-8") == '{"x": 1}\n'
     assert oct(dest.stat().st_mode & 0o777) == oct(0o600)
+
+
+def test_check_stops_when_media_was_added(tmp_path: Path, capsys) -> None:
+    site = FakeSite(tmp_path)
+    assert run_backup(_args(tmp_path), site) == 0
+    (site.media / "later.png").write_bytes(b"later")
+    capsys.readouterr()
+    code = run_restore(_args(tmp_path, yes=True), site)
+    assert code == 1
+    assert "later.png" in capsys.readouterr().out
+    assert site.restored_dump is None
+
+
+def test_replace_skips_the_media_check(tmp_path: Path) -> None:
+    site = FakeSite(tmp_path)
+    assert run_backup(_args(tmp_path), site) == 0
+    (site.media / "later.png").write_bytes(b"later")
+    code = run_restore(_args(tmp_path, yes=True, media="replace"), site)
+    assert code == 0
+    assert site.restored_media is True
+    assert site.merged_media is False
+
+
+def test_merge_keeps_files_not_in_the_archive(tmp_path: Path) -> None:
+    from xgic.cli.wagtail.site import DockerComposeSite
+
+    media = tmp_path / "media"
+    media.mkdir()
+    (media / "kept.txt").write_text("kept", encoding="utf-8")
+    (media / "old.txt").write_text("old", encoding="utf-8")
+    fresh = tmp_path / "fresh"
+    fresh.mkdir()
+    (fresh / "old.txt").write_text("from-archive", encoding="utf-8")
+    media_tar = tmp_path / "media.tar"
+    subprocess.run(["tar", "-cf", str(media_tar), "-C", str(fresh), "."], check=True)
+    site = DockerComposeSite(
+        project_dir=tmp_path,
+        compose_file=None,
+        web_service="web",
+        postgres_service="postgres",
+        database="wagtail",
+        db_user="wagtail",
+        media_dir=media,
+        base_url="http://127.0.0.1:8000",
+    )
+    site.merge_media(media_tar)
+    assert (media / "kept.txt").read_text(encoding="utf-8") == "kept"
+    assert (media / "old.txt").read_text(encoding="utf-8") == "from-archive"
 
 
 def test_restore_media_replaces_the_directory(tmp_path: Path) -> None:

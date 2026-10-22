@@ -20,6 +20,9 @@ Public repository. Follow https://github.com/xgic/ai for multi-repo standards.
   `manage.py runserver 0.0.0.0:8000`. Requires a site from `setup`.
 - `backup` publishes one `.tar.zst` and `.sha256`. The manifest stays inside
   the archive. `restore` checks that pair before it writes and requires `--yes`.
+  `--media` defaults to `check`: added or newer media files stop the restore
+  and are listed. `replace` swaps the media directory. `merge` keeps files
+  that are not in the archive.
 - Compose lifecycle (`xgic logs` / `up` / `check`) is [xgic/dev-cli](https://github.com/xgic/dev-cli). Inside the Dev Container it uses Docker-outside-of-Docker (producer image CLI + engine socket). Do not enable Docker-in-Docker.
 
 ## Out of scope

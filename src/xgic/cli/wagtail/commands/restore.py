@@ -10,7 +10,7 @@ from pathlib import Path
 
 from xgic.cli.wagtail.archive import ArchiveError, LandingPair, sha256_file
 from xgic.cli.wagtail.manifest import ManifestError
-from xgic.cli.wagtail.site import SiteError, SiteGateway
+from xgic.cli.wagtail.site import SiteError, SiteGateway, media_conflicts, media_names
 
 
 def run_restore(args: argparse.Namespace, site: SiteGateway | None = None) -> int:
@@ -32,23 +32,28 @@ def run_restore(args: argparse.Namespace, site: SiteGateway | None = None) -> in
             raise ArchiveError(
                 f"postgres_version {postgres_version} != {manifest.postgres_version}"
             )
-        if args.dry_run:
-            return _emit(
-                args,
-                {
-                    "ok": True,
-                    "action": "restore",
-                    "detail": f"dry-run: {archive.name} matches the running versions",
-                },
-                0,
-            )
-        if not args.yes:
-            raise ArchiveError("restore requires --yes")
         extract = backup_dir / f".{archive.name}.extract"
         manifest, extracted = landing.open(archive, extract)
         try:
+            added, newer = media_conflicts(
+                gateway.media_dir,
+                media_names(extracted / "media.tar"),
+                manifest.created_at,
+            )
+            if args.media == "check" and (added or newer):
+                raise ArchiveError(_media_warning(added, newer))
+            if args.dry_run:
+                detail = f"dry-run: {archive.name} matches the running versions"
+                if added or newer:
+                    detail = f"{detail}; {_media_warning(added, newer)}"
+                return _emit(args, {"ok": True, "action": "restore", "detail": detail}, 0)
+            if not args.yes:
+                raise ArchiveError("restore requires --yes")
             gateway.restore_database(extracted / "database.dump")
-            gateway.restore_media(extracted / "media.tar")
+            if args.media == "merge":
+                gateway.merge_media(extracted / "media.tar")
+            else:
+                gateway.restore_media(extracted / "media.tar")
             if args.settings_dest:
                 settings = extracted / "settings.file"
                 if not settings.is_file():
@@ -76,6 +81,15 @@ def run_restore(args: argparse.Namespace, site: SiteGateway | None = None) -> in
             1,
         )
     return _emit(args, {"ok": True, "action": "restore", "detail": "restored"}, 0)
+
+
+def _media_warning(added: list[str], newer: list[str]) -> str:
+    lines = ["media files were added or edited after the backup"]
+    if added:
+        lines.append("added: " + ", ".join(added))
+    if newer:
+        lines.append("newer: " + ", ".join(newer))
+    return "; ".join(lines)
 
 
 def _copy_private(src: Path, dest: Path) -> None:

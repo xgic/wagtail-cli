@@ -16,8 +16,11 @@ and this project uses [Semantic Versioning](https://semver.org/).
   the full PostgreSQL `server_version`, and page, image, and document counts
   from the Wagtail API.
 - `xgic wagtail restore` checks the sidecar and manifest before it writes.
-  `--dry-run` does not extract. A write requires `--yes`. After restore, the
-  same three API counts must match the manifest.
+  `--dry-run` does not change the database or media. A write requires `--yes`.
+  `--media check` (the default) stops when live media was added or edited
+  after the backup and lists those files. `--media replace` swaps the
+  directory. `--media merge` overwrites in place and keeps extra files.
+  After restore, the same three API counts must match the manifest.
 
 ## [0.1.0] - 2026-09-04
 

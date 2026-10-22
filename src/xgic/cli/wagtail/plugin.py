@@ -131,6 +131,16 @@ def register(
     _add_site_args(restore)
     restore.add_argument("--archive", default=None, help="Pair to restore. Default: newest.")
     restore.add_argument("--settings-dest", default=None)
+    restore.add_argument(
+        "--media",
+        choices=("check", "replace", "merge"),
+        default="check",
+        help=(
+            "check lists media added or edited after the backup and does not "
+            "write; replace swaps the directory; merge overwrites in place "
+            "and keeps extra files"
+        ),
+    )
     restore.add_argument("--dry-run", action="store_true")
     restore.add_argument("--yes", action="store_true")
     restore.set_defaults(func=run_restore)

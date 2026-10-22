@@ -9,6 +9,7 @@ import subprocess
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Protocol
 
@@ -54,6 +55,13 @@ class SiteGateway(Protocol):
 
     def restore_media(self, media_tar: Path) -> None:
         """Replace the media directory from ``media.tar``."""
+
+    def merge_media(self, media_tar: Path) -> None:
+        """Copy archive files onto the media directory and keep the rest."""
+
+    @property
+    def media_dir(self) -> Path:
+        """Live media directory."""
 
     def current_versions(self) -> tuple[str, str]:
         """Return the running Wagtail version and ``SHOW server_version``."""
@@ -217,6 +225,15 @@ class DockerComposeSite:
             shutil.rmtree(self.media_dir)
         os.replace(staging, self.media_dir)
 
+    def merge_media(self, media_tar: Path) -> None:
+        if self.media_dir.is_symlink():
+            raise SiteError("refusing to merge through a symlink")
+        self.media_dir.mkdir(parents=True, exist_ok=True)
+        completed = self._run(["tar", "-xf", str(media_tar), "-C", str(self.media_dir)])
+        if completed.returncode != 0:
+            detail = (completed.stderr or "").strip() or "media merge failed"
+            raise SiteError(detail)
+
     def _exec(self, service: str, args: list[str]) -> str:
         completed = self._run(self._compose(["exec", "-T", service, *args]))
         if completed.returncode != 0:
@@ -248,6 +265,53 @@ class DockerComposeSite:
 
     def _run(self, args: list[str]) -> subprocess.CompletedProcess[str]:
         return self._runner(args)
+
+
+def media_names(media_tar: Path) -> set[str]:
+    """Return file paths stored in an uncompressed media tar."""
+    completed = subprocess.run(
+        ["tar", "-tf", str(media_tar)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if completed.returncode != 0:
+        detail = completed.stderr.strip() or "cannot list media.tar"
+        raise SiteError(detail)
+    names: set[str] = set()
+    for line in completed.stdout.splitlines():
+        name = line.strip().removeprefix("./")
+        if name and not name.endswith("/"):
+            names.add(name)
+    return names
+
+
+def media_conflicts(
+    media_dir: Path,
+    archive_names: set[str],
+    created_at: datetime,
+) -> tuple[list[str], list[str]]:
+    """Return files added after the backup, then files edited after it.
+
+    A path only on disk was added. A path in both whose modification time
+    is newer than ``created_at`` was edited. Deleted files are not listed.
+    """
+    added: list[str] = []
+    newer: list[str] = []
+    if not media_dir.is_dir():
+        return added, newer
+    moment = created_at if created_at.tzinfo else created_at.replace(tzinfo=UTC)
+    for path in sorted(media_dir.rglob("*")):
+        if not path.is_file() or path.is_symlink():
+            continue
+        rel = path.relative_to(media_dir).as_posix()
+        if rel not in archive_names:
+            added.append(rel)
+            continue
+        mtime = datetime.fromtimestamp(path.stat().st_mtime, UTC)
+        if mtime > moment:
+            newer.append(rel)
+    return added, newer
 
 
 def _run_text(args: list[str]) -> subprocess.CompletedProcess[str]:
