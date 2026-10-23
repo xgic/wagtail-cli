@@ -7,6 +7,14 @@ and this project uses [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
 
+## [0.3.0] - 2026-10-22
+
+### Changed
+
+- Backup archives use `{project}_{YYYYMMDD}T{HHMMSS}Z_{version}.tar.zst`.
+  This is incompatible with `v0.2.0rc1`. `v0.3.0rc1` smoked on TestPyPI
+  before this final tag.
+
 ## [0.2.0] - 2026-10-22
 
 ### Added
