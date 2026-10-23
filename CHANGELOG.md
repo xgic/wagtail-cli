@@ -7,6 +7,15 @@ and this project uses [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
 
+## [0.3.0rc1] - 2026-10-22
+
+### Changed
+
+- TestPyPI candidate for 0.3.0. Backup archives use
+  `{project}_{YYYYMMDD}T{HHMMSS}Z_{version}.tar.zst`.
+  `v0.2.0rc1` keeps the previous backup id and is not retagged.
+  Final `v0.3.0` waits until this candidate's TestPyPI smoke succeeds.
+
 ## [0.2.0] - 2026-10-22
 
 ### Added
