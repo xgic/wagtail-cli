@@ -35,11 +35,16 @@ def run_restore(args: argparse.Namespace, site: SiteGateway | None = None) -> in
         extract = backup_dir / f".{archive.name}.extract"
         manifest, extracted = landing.open(archive, extract)
         try:
-            added, newer = media_conflicts(
-                gateway.media_dir,
-                media_names(extracted / "media.tar"),
-                manifest.created_at,
-            )
+            names = media_names(extracted / "media.tar")
+            conflicts = getattr(gateway, "container_media_conflicts", None)
+            if conflicts is not None:
+                added, newer = conflicts(names, manifest.created_at)
+            else:
+                added, newer = media_conflicts(
+                    gateway.media_dir,
+                    names,
+                    manifest.created_at,
+                )
             if args.media == "check" and (added or newer):
                 raise ArchiveError(_media_warning(added, newer))
             if args.dry_run:
@@ -104,18 +109,9 @@ def _copy_private(src: Path, dest: Path) -> None:
 
 
 def _site_from_args(args: argparse.Namespace) -> SiteGateway:
-    from xgic.cli.wagtail.site import DockerComposeSite
+    from xgic.cli.wagtail.site import site_from_namespace
 
-    return DockerComposeSite(
-        project_dir=Path(args.project_dir or Path.cwd()),
-        compose_file=args.compose_file,
-        web_service=args.web_service,
-        postgres_service=args.postgres_service,
-        database=args.database,
-        db_user=args.db_user,
-        media_dir=Path(args.media_dir),
-        base_url=args.base_url,
-    )
+    return site_from_namespace(args)
 
 
 def _emit(args: argparse.Namespace, report: dict[str, object], code: int) -> int:

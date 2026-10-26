@@ -116,18 +116,9 @@ def _backup_id(project: str, wagtail_version: str) -> str:
 
 
 def _site_from_args(args: argparse.Namespace) -> SiteGateway:
-    from xgic.cli.wagtail.site import DockerComposeSite
+    from xgic.cli.wagtail.site import site_from_namespace
 
-    return DockerComposeSite(
-        project_dir=Path(args.project_dir or Path.cwd()),
-        compose_file=args.compose_file,
-        web_service=args.web_service,
-        postgres_service=args.postgres_service,
-        database=args.database,
-        db_user=args.db_user,
-        media_dir=Path(args.media_dir),
-        base_url=args.base_url,
-    )
+    return site_from_namespace(args)
 
 
 def _emit(args: argparse.Namespace, report: dict[str, object], code: int) -> int:

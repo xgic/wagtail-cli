@@ -106,6 +106,17 @@ def register(
         parser.add_argument("--database", default="wagtail")
         parser.add_argument("--db-user", default="wagtail")
         parser.add_argument("--media-dir", default="media")
+        parser.add_argument(
+            "--web-container",
+            default="",
+            help="Running app container. When set with --postgres-container, "
+            "backup reads that container instead of a host directory.",
+        )
+        parser.add_argument(
+            "--postgres-container",
+            default="",
+            help="Running database container used with --web-container.",
+        )
         parser.add_argument("--json", action="store_true")
 
     backup = wagtail_sub.add_parser(
