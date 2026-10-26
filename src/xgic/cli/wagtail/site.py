@@ -316,3 +316,30 @@ def media_conflicts(
 
 def _run_text(args: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(args, capture_output=True, text=True, check=False)
+
+
+def site_from_namespace(args: object) -> SiteGateway:
+    """Use container names when they are set, otherwise Compose on disk."""
+    web = getattr(args, "web_container", None) or ""
+    postgres = getattr(args, "postgres_container", None) or ""
+    if web and postgres:
+        from xgic.cli.wagtail.exec_site import DockerExecSite
+
+        return DockerExecSite(
+            web_container=web,
+            postgres_container=postgres,
+            database=args.database,
+            db_user=args.db_user,
+            media_dir=args.media_dir,
+            base_url=args.base_url,
+        )
+    return DockerComposeSite(
+        project_dir=Path(args.project_dir or Path.cwd()),
+        compose_file=args.compose_file,
+        web_service=args.web_service,
+        postgres_service=args.postgres_service,
+        database=args.database,
+        db_user=args.db_user,
+        media_dir=Path(args.media_dir),
+        base_url=args.base_url,
+    )
