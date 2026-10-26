@@ -7,6 +7,17 @@ and this project uses [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
 
+## [0.3.1] - 2026-10-26
+
+### Added
+
+- `xgic wagtail backup` and `xgic wagtail restore` accept `--web-container`
+  and `--postgres-container`. When both are set, the database dump, the media
+  tar, and the count requests use `docker exec`. Restore writes inside the
+  container and does not replace a host mount point. Omit both options to
+  keep the Compose file and the host media directory. `v0.3.1rc1`
+  smoked on TestPyPI before this final tag.
+
 ## [0.3.0] - 2026-10-22
 
 ### Changed
