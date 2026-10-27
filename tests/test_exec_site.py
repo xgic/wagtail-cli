@@ -48,13 +48,21 @@ def test_versions_counts_and_media_use_the_named_containers(tmp_path: Path) -> N
 
     def runner(args: list[str]) -> subprocess.CompletedProcess[str]:
         commands.append(args)
+        joined = " ".join(args)
         if args[:3] == ["docker", "inspect", "-f"]:
             return subprocess.CompletedProcess(args, 0, "/app\n", "")
-        if "SHOW server_version" in args:
+        if "os.walk" in joined:
+            return subprocess.CompletedProcess(args, 0, "/app\n", "")
+        if "SHOW server_version" in joined:
             return subprocess.CompletedProcess(args, 0, "16.4\n", "")
-        if "wagtail.__version__" in "".join(args):
+        if "wagtail.__version__" in joined:
             return subprocess.CompletedProcess(args, 0, "7.4.2\n", "")
-        return subprocess.CompletedProcess(args, 0, "8\n8\n21\n0\n", "")
+        return subprocess.CompletedProcess(
+            args,
+            0,
+            "84 objects imported automatically (use -v 2 for details).\n\n8\n8\n21\n0\n",
+            "",
+        )
 
     def popen(command, **_kwargs):
         commands.append(command)
@@ -99,9 +107,41 @@ def test_versions_counts_and_media_use_the_named_containers(tmp_path: Path) -> N
     assert not site.media_dir.exists()
 
 
+def test_counts_use_the_nested_manage_directory() -> None:
+    commands: list[list[str]] = []
+
+    def runner(args: list[str]) -> subprocess.CompletedProcess[str]:
+        commands.append(args)
+        joined = " ".join(args)
+        if args[:3] == ["docker", "inspect", "-f"]:
+            return subprocess.CompletedProcess(args, 0, "/app\n", "")
+        if "os.walk" in joined:
+            return subprocess.CompletedProcess(args, 0, "/app/src/project\n", "")
+        return subprocess.CompletedProcess(args, 0, "1\n2\n3\n4\n", "")
+
+    site = DockerExecSite(
+        web_container="app-a",
+        postgres_container="db-a",
+        database="cms",
+        db_user="cms",
+        media_dir="/app/media",
+        base_url="http://127.0.0.1:8000",
+        runner=runner,
+    )
+    assert site.current_counts() == (1, 2, 3, 4)
+    assert any(
+        command[:5] == ["docker", "exec", "-w", "/app/src/project", "app-a"]
+        and "manage.py" in command
+        for command in commands
+    )
+
+
 def test_counts_reject_anything_other_than_four_integers() -> None:
     def runner(args: list[str]) -> subprocess.CompletedProcess[str]:
+        joined = " ".join(args)
         if args[:3] == ["docker", "inspect", "-f"]:
+            return subprocess.CompletedProcess(args, 0, "/app\n", "")
+        if "os.walk" in joined:
             return subprocess.CompletedProcess(args, 0, "/app\n", "")
         return subprocess.CompletedProcess(args, 0, "8\n8\n21\n", "")
 

@@ -24,6 +24,35 @@ print(get_image_model().objects.count())
 print(Document.objects.count())
 """
 
+# manage.py selects the project settings. It lives in the container working
+# directory, or in the one project directory under that working directory.
+_MANAGE_DIRECTORY_PROGRAM = r"""
+import os
+from pathlib import Path
+root = Path.cwd()
+if (root / "manage.py").is_file():
+    print(root)
+    raise SystemExit(0)
+skip = {
+    ".git",
+    ".venv",
+    "media",
+    "node_modules",
+    "site-packages",
+    "static",
+    "static_collected",
+    "venv",
+}
+matches = []
+for dirpath, dirnames, filenames in os.walk(root):
+    dirnames[:] = [name for name in dirnames if name not in skip]
+    if "manage.py" in filenames:
+        matches.append(Path(dirpath))
+if len(matches) != 1:
+    raise SystemExit(f"manage.py count {len(matches)}")
+print(matches[0])
+"""
+
 
 class DockerExecSite:
     """A running Wagtail container and its database container."""
@@ -103,12 +132,13 @@ class DockerExecSite:
                 self.web_container,
             ]
         ).strip() or "/"
+        manage_dir = self._manage_directory(workdir)
         text = self._text(
             [
                 "docker",
                 "exec",
                 "-w",
-                workdir,
+                manage_dir,
                 self.web_container,
                 "python",
                 "manage.py",
@@ -117,14 +147,29 @@ class DockerExecSite:
                 _COUNT_PROGRAM,
             ]
         )
-        lines = [line for line in text.splitlines() if line.strip()]
+        lines = [line.strip() for line in text.splitlines() if line.strip().isdigit()]
         if len(lines) != 4:
             raise SiteError("ValueError: container did not return four counts")
-        try:
-            live_pages, all_pages, images, documents = (int(line) for line in lines)
-        except ValueError as exc:
-            raise SiteError("ValueError: container counts were not integers") from exc
+        live_pages, all_pages, images, documents = (int(line) for line in lines)
         return live_pages, all_pages, images, documents
+
+    def _manage_directory(self, workdir: str) -> str:
+        text = self._text(
+            [
+                "docker",
+                "exec",
+                "-w",
+                workdir,
+                self.web_container,
+                "python",
+                "-c",
+                _MANAGE_DIRECTORY_PROGRAM,
+            ]
+        )
+        found = [line.strip() for line in text.splitlines() if line.strip()]
+        if len(found) != 1 or not found[0].startswith("/"):
+            raise SiteError("ValueError: container did not name one manage.py directory")
+        return found[0]
 
     def write_database(self, dest: Path) -> None:
         self._stream(
