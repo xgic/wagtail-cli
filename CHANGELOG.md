@@ -7,6 +7,8 @@ and this project uses [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
 
+## [0.3.2] - 2026-10-27
+
 ### Changed
 
 - With `--web-container`, backup and restore read four counts inside that
@@ -16,7 +18,8 @@ and this project uses [Semantic Versioning](https://semver.org/).
   under that working directory. `manage.py` selects the project settings.
   Shell text that is not an integer is ignored. The manifest requires all
   four counts. A manifest that stored only a live page count is rejected.
-  The database dump and the media tar still use `docker exec`.
+  The database dump and the media tar still use `docker exec`. `v0.3.2rc1`
+  smoked on TestPyPI before this final tag.
 
 ## [0.3.1] - 2026-10-26
 
