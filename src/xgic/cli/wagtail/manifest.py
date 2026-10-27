@@ -23,11 +23,12 @@ class Member(BaseModel):
 
 
 class Counts(BaseModel):
-    """Counts from the Wagtail API v2 listing endpoints."""
+    """Live pages, all pages, images, and documents."""
 
     model_config = ConfigDict(extra="forbid")
 
-    pages: int = Field(ge=0)
+    live_pages: int = Field(ge=0)
+    all_pages: int = Field(ge=0)
     images: int = Field(ge=0)
     documents: int = Field(ge=0)
 

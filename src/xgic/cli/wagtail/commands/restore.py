@@ -64,16 +64,20 @@ def run_restore(args: argparse.Namespace, site: SiteGateway | None = None) -> in
                 if not settings.is_file():
                     raise ArchiveError("archive has no settings.file")
                 _copy_private(settings, Path(args.settings_dest))
-            pages, images, documents = gateway.current_counts()
-            if (pages, images, documents) != (
-                manifest.counts.pages,
+            live_pages, all_pages, images, documents = gateway.current_counts()
+            actual = (live_pages, all_pages, images, documents)
+            expected = (
+                manifest.counts.live_pages,
+                manifest.counts.all_pages,
                 manifest.counts.images,
                 manifest.counts.documents,
-            ):
+            )
+            if actual != expected:
                 raise ArchiveError(
-                    "API counts "
-                    f"{pages},{images},{documents} != "
-                    f"{manifest.counts.pages},"
+                    "counts "
+                    f"{live_pages},{all_pages},{images},{documents} != "
+                    f"{manifest.counts.live_pages},"
+                    f"{manifest.counts.all_pages},"
                     f"{manifest.counts.images},"
                     f"{manifest.counts.documents}"
                 )

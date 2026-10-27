@@ -6,7 +6,6 @@ mount that volume into the process that runs the command.
 
 from __future__ import annotations
 
-import json
 import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
@@ -16,21 +15,13 @@ from xgic.cli.wagtail.site import CommandRunner, SiteError, SiteSnapshot, _run_t
 _CHUNK = 1024 * 1024
 
 _COUNT_PROGRAM = """
-import json
-import urllib.request
-
-def count(url):
-    with urllib.request.urlopen(url, timeout=30) as response:
-        payload = json.load(response)
-    meta = payload.get("meta")
-    if not isinstance(meta, dict) or "total_count" not in meta:
-        raise SystemExit("missing meta.total_count")
-    print(int(meta["total_count"]))
-
-base = %s
-count(base + "/api/v2/pages/")
-count(base + "/api/v2/images/")
-count(base + "/api/v2/documents/")
+from wagtail.models import Page
+from wagtail.images import get_image_model
+from wagtail.documents.models import Document
+print(Page.objects.live().count())
+print(Page.objects.count())
+print(get_image_model().objects.count())
+print(Document.objects.count())
 """
 
 
@@ -65,11 +56,12 @@ class DockerExecSite:
 
     def snapshot(self) -> SiteSnapshot:
         wagtail_version, postgres_version = self.current_versions()
-        pages, images, documents = self.current_counts()
+        live_pages, all_pages, images, documents = self.current_counts()
         return SiteSnapshot(
             wagtail_version=wagtail_version,
             postgres_version=postgres_version,
-            pages=pages,
+            live_pages=live_pages,
+            all_pages=all_pages,
             images=images,
             documents=documents,
         )
@@ -101,19 +93,38 @@ class DockerExecSite:
         )
         return wagtail.strip(), postgres.strip()
 
-    def current_counts(self) -> tuple[int, int, int]:
-        program = _COUNT_PROGRAM % json.dumps(self.base_url)
+    def current_counts(self) -> tuple[int, int, int, int]:
+        workdir = self._text(
+            [
+                "docker",
+                "inspect",
+                "-f",
+                "{{.Config.WorkingDir}}",
+                self.web_container,
+            ]
+        ).strip() or "/"
         text = self._text(
-            ["docker", "exec", self.web_container, "python", "-c", program]
+            [
+                "docker",
+                "exec",
+                "-w",
+                workdir,
+                self.web_container,
+                "python",
+                "manage.py",
+                "shell",
+                "-c",
+                _COUNT_PROGRAM,
+            ]
         )
         lines = [line for line in text.splitlines() if line.strip()]
-        if len(lines) != 3:
-            raise SiteError("ValueError: container did not return three counts")
+        if len(lines) != 4:
+            raise SiteError("ValueError: container did not return four counts")
         try:
-            pages, images, documents = (int(line) for line in lines)
+            live_pages, all_pages, images, documents = (int(line) for line in lines)
         except ValueError as exc:
             raise SiteError("ValueError: container counts were not integers") from exc
-        return pages, images, documents
+        return live_pages, all_pages, images, documents
 
     def write_database(self, dest: Path) -> None:
         self._stream(

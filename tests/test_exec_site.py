@@ -7,8 +7,10 @@ from argparse import Namespace
 from datetime import UTC, datetime
 from pathlib import Path
 
+import pytest
+
 from xgic.cli.wagtail.exec_site import DockerExecSite
-from xgic.cli.wagtail.site import site_from_namespace
+from xgic.cli.wagtail.site import SiteError, site_from_namespace
 
 
 class _Proc:
@@ -46,11 +48,13 @@ def test_versions_counts_and_media_use_the_named_containers(tmp_path: Path) -> N
 
     def runner(args: list[str]) -> subprocess.CompletedProcess[str]:
         commands.append(args)
+        if args[:3] == ["docker", "inspect", "-f"]:
+            return subprocess.CompletedProcess(args, 0, "/app\n", "")
         if "SHOW server_version" in args:
             return subprocess.CompletedProcess(args, 0, "16.4\n", "")
         if "wagtail.__version__" in "".join(args):
             return subprocess.CompletedProcess(args, 0, "7.4.2\n", "")
-        return subprocess.CompletedProcess(args, 0, "4\n2\n1\n", "")
+        return subprocess.CompletedProcess(args, 0, "8\n8\n21\n0\n", "")
 
     def popen(command, **_kwargs):
         commands.append(command)
@@ -70,10 +74,48 @@ def test_versions_counts_and_media_use_the_named_containers(tmp_path: Path) -> N
     media = tmp_path / "media.tar"
     site.write_media(media)
     assert snapshot.wagtail_version == "7.4.2"
-    assert snapshot.pages == 4
+    assert snapshot.live_pages == 8
+    assert snapshot.all_pages == 8
+    assert snapshot.images == 21
+    assert snapshot.documents == 0
+    count_commands = [
+        command
+        for command in commands
+        if command[:6] == ["docker", "exec", "-w", "/app", "app-a", "python"]
+        and "manage.py" in command
+        and "shell" in command
+    ]
+    assert len(count_commands) == 1
+    program = count_commands[0][-1]
+    assert "Page.objects.live().count()" in program
+    assert "Page.objects.count()" in program
+    assert "get_image_model().objects.count()" in program
+    assert "Document.objects.count()" in program
+    assert "DJANGO_SETTINGS_MODULE" not in program
+    assert "http://" not in program
+    assert "https://" not in program
     assert media.read_bytes() == b"tar-bytes"
     assert ["docker", "exec", "app-a", "tar", "-cf", "-", "-C", "/app/media", "."] in commands
     assert not site.media_dir.exists()
+
+
+def test_counts_reject_anything_other_than_four_integers() -> None:
+    def runner(args: list[str]) -> subprocess.CompletedProcess[str]:
+        if args[:3] == ["docker", "inspect", "-f"]:
+            return subprocess.CompletedProcess(args, 0, "/app\n", "")
+        return subprocess.CompletedProcess(args, 0, "8\n8\n21\n", "")
+
+    site = DockerExecSite(
+        web_container="app-a",
+        postgres_container="db-a",
+        database="cms",
+        db_user="cms",
+        media_dir="/app/media",
+        base_url="http://127.0.0.1:8000",
+        runner=runner,
+    )
+    with pytest.raises(SiteError, match="four counts"):
+        site.current_counts()
 
 
 def test_two_projects_are_selected_from_container_names() -> None:

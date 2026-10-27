@@ -7,6 +7,15 @@ and this project uses [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
 
+### Changed
+
+- With `--web-container`, backup and restore read four counts inside that
+  container: live pages, all pages, images, and documents. The command is
+  `python manage.py shell -c` in the container working directory, so the
+  project settings selected by `manage.py` are used. The manifest requires
+  all four. A manifest that stored only a live page count is rejected.
+  The database dump and the media tar still use `docker exec`.
+
 ## [0.3.1] - 2026-10-26
 
 ### Added

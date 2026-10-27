@@ -26,7 +26,8 @@ class FakeSite:
         self.snapshot_value = SiteSnapshot(
             wagtail_version="8.0.1",
             postgres_version="16.4",
-            pages=6,
+            live_pages=6,
+            all_pages=7,
             images=2,
             documents=1,
         )
@@ -34,7 +35,7 @@ class FakeSite:
         self.restored_media = False
         self.merged_media = False
         self.settings_written: Path | None = None
-        self.counts = (6, 2, 1)
+        self.counts = (6, 7, 2, 1)
 
     def snapshot(self) -> SiteSnapshot:
         return self.snapshot_value
@@ -68,7 +69,7 @@ class FakeSite:
     def current_versions(self) -> tuple[str, str]:
         return self.snapshot_value.wagtail_version, self.snapshot_value.postgres_version
 
-    def current_counts(self) -> tuple[int, int, int]:
+    def current_counts(self) -> tuple[int, int, int, int]:
         return self.counts
 
 
@@ -119,7 +120,8 @@ def test_backup_publishes_pair_with_inner_manifest(tmp_path: Path, capsys) -> No
     manifest = LandingPair(archive.parent).manifest_of(archive)
     assert manifest.wagtail_version == "8.0.1"
     assert manifest.postgres_version == "16.4"
-    assert manifest.counts.pages == 6
+    assert manifest.counts.live_pages == 6
+    assert manifest.counts.all_pages == 7
     assert manifest.counts.images == 2
     assert manifest.counts.documents == 1
     assert manifest.artifacts.omitted == ["search_index", "cache"]
@@ -161,7 +163,7 @@ def test_restore_requires_yes(tmp_path: Path, capsys) -> None:
 def test_restore_refuses_version_mismatch(tmp_path: Path, capsys) -> None:
     site = FakeSite(tmp_path)
     assert run_backup(_args(tmp_path), site) == 0
-    site.snapshot_value = SiteSnapshot("8.0.1", "16.10", 6, 2, 1)
+    site.snapshot_value = SiteSnapshot("8.0.1", "16.10", 6, 7, 2, 1)
     capsys.readouterr()
     code = run_restore(_args(tmp_path, yes=True), site)
     assert code == 1
@@ -172,11 +174,11 @@ def test_restore_refuses_version_mismatch(tmp_path: Path, capsys) -> None:
 def test_restore_checks_counts_after_write(tmp_path: Path, capsys) -> None:
     site = FakeSite(tmp_path)
     assert run_backup(_args(tmp_path), site) == 0
-    site.counts = (6, 2, 0)
+    site.counts = (6, 7, 2, 0)
     capsys.readouterr()
     code = run_restore(_args(tmp_path, yes=True), site)
     assert code == 1
-    assert "API counts" in capsys.readouterr().out
+    assert "counts 6,7,2,0 != 6,7,2,1" in capsys.readouterr().out
     assert site.restored_media is True
 
 
@@ -266,10 +268,30 @@ def test_restore_media_replaces_the_directory(tmp_path: Path) -> None:
     assert (media / "new.txt").read_text(encoding="utf-8") == "new"
 
 
-def test_count_helper_reads_total_count() -> None:
-    from xgic.cli.wagtail.site import count_from_payload
+def test_compose_counts_require_the_web_container(tmp_path: Path) -> None:
+    from xgic.cli.wagtail.site import DockerComposeSite, SiteError
 
-    assert count_from_payload({"meta": {"total_count": 4}, "items": []}, "url") == 4
+    site = DockerComposeSite(
+        project_dir=tmp_path,
+        compose_file=None,
+        web_service="web",
+        postgres_service="postgres",
+        database="wagtail",
+        db_user="wagtail",
+        media_dir=tmp_path / "media",
+        base_url="http://127.0.0.1:8000",
+    )
+    with pytest.raises(SiteError, match="--web-container"):
+        site.current_counts()
+
+
+def test_manifest_rejects_a_count_set_without_all_pages() -> None:
+    from pydantic import ValidationError
+
+    from xgic.cli.wagtail.manifest import Counts
+
+    with pytest.raises(ValidationError):
+        Counts.model_validate({"pages": 1, "images": 0, "documents": 0})
 
 
 def test_backup_name_uses_project_and_utc_second(tmp_path: Path) -> None:
