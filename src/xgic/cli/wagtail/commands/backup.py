@@ -77,7 +77,8 @@ def run_backup(args: argparse.Namespace, site: SiteGateway | None = None) -> int
                         settings=settings_member,
                     ),
                     counts=Counts(
-                        pages=snapshot.pages,
+                        live_pages=snapshot.live_pages,
+                        all_pages=snapshot.all_pages,
                         images=snapshot.images,
                         documents=snapshot.documents,
                     ),

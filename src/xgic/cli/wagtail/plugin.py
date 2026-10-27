@@ -97,7 +97,7 @@ def register(
         parser.add_argument(
             "--base-url",
             default="http://127.0.0.1:8000",
-            help="Wagtail origin for /api/v2/ listings",
+            help="Accepted for existing callers. Counts are read in the app container.",
         )
         parser.add_argument("--project-dir", default=None)
         parser.add_argument("--compose-file", default=None)
