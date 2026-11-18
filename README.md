@@ -92,7 +92,7 @@ xgic wagtail dev
 PyPI publish follows the hub
 [python-package-release.md](https://github.com/xgic/ai/blob/main/docs/python-package-release.md)
 path (RC → TestPyPI → PyPI).
-The release milestone is titled `X.Y.Z`, matching the published version. Set it on every issue and pull request in that release. GitHub does not copy the issue milestone onto the pull request. The candidate and the final publish share it.
+The release milestone follows the work-tracking page.
 [Work tracking](https://github.com/xgic/ai/blob/main/docs/work-tracking-and-checklists.md).
 
 ---
